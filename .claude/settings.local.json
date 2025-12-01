@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(findstr:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git filter-branch:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
