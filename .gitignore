@@ -34,5 +34,6 @@ wheels/
 
 # 模型文件（文件较大，不提交到git）
 models/*/
+models.zip
 !models/.gitkeep
 !models/README.md
