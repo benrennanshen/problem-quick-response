@@ -4,7 +4,8 @@
       "Bash(findstr:*)",
       "Bash(git commit:*)",
       "Bash(git filter-branch:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
