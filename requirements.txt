@@ -1,0 +1,16 @@
+# 使用 PyTorch CPU 版本（体积更小，适合推理任务，本地和Docker统一）
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+sqlalchemy==2.0.23
+pymysql==1.1.0
+python-dotenv==1.0.0
+pydantic==2.5.0
+chinesecalendar==1.11.0
+numpy==1.24.4
+torch==2.2.1+cpu
+sentence-transformers==2.6.1
+transformers==4.39.3
+huggingface-hub==0.20.3
+

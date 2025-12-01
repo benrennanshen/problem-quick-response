@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: problem-quick-response
+    ports:
+      - "8004:8004"
+    volumes:
+      # 挂载模型目录（不包含在镜像中，减小镜像体积）
+      - ./models:/app/models
+    # 使用 .env 文件加载环境变量（更简洁，便于管理）
+    env_file:
+      - .env
+    # 如果 .env 文件不存在，可以使用默认值
+    environment:
+      # 模型路径（容器内路径，如果 .env 中未设置则使用此默认值）
+      - MODEL_PATH=${MODEL_PATH:-/app/models/paraphrase-multilingual-MiniLM-L12-v2}
+    restart: unless-stopped
+    # 健康检查（使用 Python 检查，无需额外安装 curl）
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8004/docs').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
