@@ -1,4 +1,4 @@
-# 使用 PyTorch CPU 版本（体积更小，适合推理任务，本地和Docker统一）
+# Use PyTorch CPU wheels (smaller, good for inference; matches local & Docker)
 --extra-index-url https://download.pytorch.org/whl/cpu
 
 fastapi==0.104.1
