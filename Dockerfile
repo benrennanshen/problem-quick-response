@@ -10,9 +10,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-# 安装所有依赖（包括PyTorch CPU版本，统一从requirements.txt安装）
+# 先安装本地下载好的 PyTorch CPU 轮子，再安装其余依赖
+COPY torch-2.2.1+cpu-cp311-cp311-linux_x86_64.whl ./
 COPY requirements.txt ./
 RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir torch-2.2.1+cpu-cp311-cp311-linux_x86_64.whl \
     && pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple \
     && pip cache purge \
     && rm -rf /root/.cache/pip

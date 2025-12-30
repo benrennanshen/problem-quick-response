@@ -37,22 +37,12 @@ def build_response(data, message: str = "success", http_code: int = 200):
         "data": data
     }
 
-# 读取根路径配置，便于本地与反向代理环境共用
-_root_path_env = os.getenv("API_ROOT_PATH", "").rstrip("/")
-ROOT_PATH = f"/{_root_path_env.lstrip('/')}" if _root_path_env else ""
-DOCS_URL = f"{ROOT_PATH}/docs" if ROOT_PATH else "/docs"
-REDOC_URL = f"{ROOT_PATH}/redoc" if ROOT_PATH else "/redoc"
-OPENAPI_URL = f"{ROOT_PATH}/openapi.json" if ROOT_PATH else "/openapi.json"
-
-# 创建FastAPI应用（支持带路径前缀的部署）
+# 创建FastAPI应用（参考 excel-api 的方式，硬编码 root_path）
 app = FastAPI(
     title="接诉即办统计系统",
     description="提供接诉即办数据的统计分析接口",
     version="1.0.0",
-    docs_url=DOCS_URL,
-    redoc_url=REDOC_URL,
-    openapi_url=OPENAPI_URL,
-    root_path=ROOT_PATH,
+    root_path="/problem-quick-response",
 )
 
 # 配置CORS
