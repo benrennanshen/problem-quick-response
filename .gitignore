@@ -33,6 +33,11 @@ wheels/
 # 日志
 *.log
 
+# 环境变量文件（包含敏感信息，不应提交）
+.env
+.env.local
+.env.*.local
+
 # 模型文件（文件较大，不提交到git）
 models/*/
 models.zip
