@@ -8,6 +8,8 @@ services:
     volumes:
       - ./logs:/app/logs
       - ./models:/app/models
+    env_file:
+      - .env
     environment:
       - PYTHONUNBUFFERED=1
     restart: unless-stopped

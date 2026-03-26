@@ -111,3 +111,56 @@ class RequestsByIdsRequest(BaseModel):
 class RequestsByIdsResponse(BaseModel):
     requests: List[StudentRequestItem]
 
+
+class DetailRequest(BaseModel):
+    """
+    明细查询请求模型
+    """
+    start_time: str = Field(..., description="开始时间，格式：YYYY-MM-DD HH:MM:SS")
+    end_time: str = Field(..., description="结束时间，格式：YYYY-MM-DD HH:MM:SS")
+    handling_unit: Optional[str] = Field(None, description="受理单位筛选")
+    category: Optional[str] = Field(None, description="诉求分类筛选")
+    status: Optional[str] = Field(None, description="状态筛选")
+    finish_start_time: Optional[str] = Field(None, description="办结开始时间，格式：YYYY-MM-DD HH:MM:SS")
+    finish_end_time: Optional[str] = Field(None, description="办结结束时间，格式：YYYY-MM-DD HH:MM:SS")
+    page: int = Field(1, ge=1, description="页码，从1开始")
+    page_size: int = Field(20, ge=1, le=100, description="每页数量，最大100")
+
+
+class DetailSummary(BaseModel):
+    """
+    明细数据汇总统计
+    """
+    total_count: int = Field(..., description="总记录数")
+    accepted_count: int = Field(..., description="受理量")
+    completed_count: int = Field(..., description="办结量")
+    completed_in_one_workday: int = Field(..., description="1个工作日内办结数量")
+    completed_in_3_days: int = Field(..., description="3个工作日内办结数量")
+    completed_in_7_days: int = Field(..., description="7个工作日内办结数量")
+    completed_over_7_days: int = Field(..., description="超过7个工作日办结数量")
+
+
+class DetailResponse(BaseModel):
+    """
+    明细查询响应模型
+    """
+    total: int = Field(..., description="总记录数")
+    page: int = Field(..., description="当前页码")
+    page_size: int = Field(..., description="每页数量")
+    total_pages: int = Field(..., description="总页数")
+    records: List[StudentRequestItem] = Field(..., description="明细记录列表")
+    summary: DetailSummary = Field(..., description="数据汇总统计")
+
+
+class ExportRequest(BaseModel):
+    """
+    导出请求模型
+    """
+    start_time: str = Field(..., description="开始时间，格式：YYYY-MM-DD HH:MM:SS")
+    end_time: str = Field(..., description="结束时间，格式：YYYY-MM-DD HH:MM:SS")
+    handling_unit: Optional[str] = Field(None, description="受理单位筛选")
+    category: Optional[str] = Field(None, description="诉求分类筛选")
+    status: Optional[str] = Field(None, description="状态筛选")
+    finish_start_time: Optional[str] = Field(None, description="办结开始时间，格式：YYYY-MM-DD HH:MM:SS")
+    finish_end_time: Optional[str] = Field(None, description="办结结束时间，格式：YYYY-MM-DD HH:MM:SS")
+

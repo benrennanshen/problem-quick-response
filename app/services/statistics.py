@@ -13,7 +13,7 @@ from app.utils.date_utils import (
 )
 from app.services.similarity import find_duplicate_requests
 from datetime import datetime, timedelta
-from typing import List, Dict
+from typing import List, Dict, Optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -422,4 +422,201 @@ class StatisticsService:
             .all()
         )
         return [self._serialize_request(record) for record in records]
+
+    def get_detail_records(
+        self,
+        start_time: str,
+        end_time: str,
+        handling_unit: Optional[str] = None,
+        category: Optional[str] = None,
+        status: Optional[str] = None,
+        finish_start_time: Optional[str] = None,
+        finish_end_time: Optional[str] = None,
+        page: int = 1,
+        page_size: int = 20
+    ) -> Dict:
+        """
+        获取明细记录（支持分页和筛选）
+
+        Args:
+            start_time: 开始时间
+            end_time: 结束时间
+            handling_unit: 受理单位筛选
+            category: 诉求分类筛选
+            status: 状态筛选
+            finish_start_time: 办结开始时间
+            finish_end_time: 办结结束时间
+            page: 页码
+            page_size: 每页数量
+
+        Returns:
+            包含明细记录和汇总统计的字典
+        """
+        try:
+            # 解析时间
+            start_dt = parse_datetime(start_time)
+            end_dt = parse_datetime(end_time)
+            finish_start_dt = parse_datetime(finish_start_time) if finish_start_time else None
+            finish_end_dt = parse_datetime(finish_end_time) if finish_end_time else None
+        except Exception as e:
+            logger.error(f"时间解析失败: {e}")
+            raise ValueError(f"时间格式错误: {e}")
+
+        # 查询时间范围内的所有记录
+        query = self.db.query(StudentRequest).filter(
+            and_(
+                StudentRequest.submit_time.isnot(None),
+                StudentRequest.submit_time != ''
+            )
+        )
+
+        # 获取所有记录
+        all_requests = query.all()
+
+        # 转换为字典列表并过滤
+        filtered_data = []
+        for req in all_requests:
+            try:
+                submit_dt = parse_datetime(req.submit_time)
+
+                # 检查提交时间是否在范围内
+                if not (start_dt <= submit_dt <= end_dt):
+                    continue
+
+                # 检查受理单位筛选
+                if handling_unit and req.handling_unit != handling_unit:
+                    continue
+
+                # 检查诉求分类筛选（使用规范化后的分类）
+                if category:
+                    normalized_category = self._normalize_category(req.category or '')
+                    if normalized_category != category:
+                        continue
+
+                # 检查状态筛选
+                if status and req.status != status:
+                    continue
+
+                # 检查办结时间筛选
+                if finish_start_dt or finish_end_dt:
+                    if not req.finish_time or not req.finish_time.strip():
+                        continue
+                    finish_dt = parse_datetime(req.finish_time)
+                    if finish_start_dt and finish_dt < finish_start_dt:
+                        continue
+                    if finish_end_dt and finish_dt > finish_end_dt:
+                        continue
+
+                # 记录通过所有筛选条件
+                record_dict = self._serialize_request(req)
+                # 添加用于汇总统计的原始数据
+                filtered_data.append({
+                    'id': req.id,
+                    'student_staff_id': req.student_staff_id,
+                    'title': req.title or '',
+                    'content': req.content or '',
+                    'submit_time': req.submit_time,
+                    'receive_time': req.receive_time,
+                    'finish_time': req.finish_time,
+                    'status': req.status or '',
+                    'category': req.category or '',
+                    'handling_unit': req.handling_unit or '未指定受理单位',
+                    'record_dict': record_dict
+                })
+            except Exception as e:
+                logger.warning(f"解析记录 {req.id} 失败: {e}")
+                continue
+
+        total_count = len(filtered_data)
+
+        # 计算汇总统计
+        summary = self._calculate_detail_summary(filtered_data)
+
+        # 分页处理
+        total_pages = (total_count + page_size - 1) // page_size
+        start_idx = (page - 1) * page_size
+        end_idx = start_idx + page_size
+
+        paginated_records = [
+            item['record_dict']
+            for item in filtered_data[start_idx:end_idx]
+        ]
+
+        return {
+            'total': total_count,
+            'page': page,
+            'page_size': page_size,
+            'total_pages': total_pages,
+            'records': paginated_records,
+            'summary': summary
+        }
+
+    def _calculate_detail_summary(self, requests_data: List[Dict]) -> Dict:
+        """
+        计算明细数据的汇总统计
+
+        Args:
+            requests_data: 筛选后的记录列表
+
+        Returns:
+            汇总统计字典
+        """
+        total_count = len(requests_data)
+
+        if total_count == 0:
+            return {
+                'total_count': 0,
+                'accepted_count': 0,
+                'completed_count': 0,
+                'completed_in_one_workday': 0,
+                'completed_in_3_days': 0,
+                'completed_in_7_days': 0,
+                'completed_over_7_days': 0
+            }
+
+        # 计算受理量和办结量
+        accepted_count = sum(1 for r in requests_data if r['receive_time'] and r['receive_time'].strip())
+        completed_count = sum(1 for r in requests_data if r['finish_time'] and r['finish_time'].strip())
+
+        # 计算办结时间统计
+        completed_in_one_workday = 0
+        completed_in_3_days = 0
+        completed_in_7_days = 0
+        completed_over_7_days = 0
+
+        for req in requests_data:
+            if not (req['receive_time'] and req['receive_time'].strip() and
+                    req['finish_time'] and req['finish_time'].strip()):
+                continue
+
+            try:
+                receive_dt = parse_datetime(req['receive_time'])
+                finish_dt = parse_datetime(req['finish_time'])
+
+                if finish_dt < receive_dt:
+                    continue
+
+                workdays = get_workdays_between(receive_dt, finish_dt)
+
+                if workdays <= 1:
+                    completed_in_one_workday += 1
+                elif workdays <= 3:
+                    completed_in_3_days += 1
+                elif workdays <= 7:
+                    completed_in_7_days += 1
+                else:
+                    completed_over_7_days += 1
+            except Exception as e:
+                logger.warning(f"计算记录 {req.get('id')} 的办结时间失败: {e}")
+                continue
+
+        return {
+            'total_count': total_count,
+            'accepted_count': accepted_count,
+            'completed_count': completed_count,
+            'completed_in_one_workday': completed_in_one_workday,
+            'completed_in_3_days': completed_in_3_days,
+            'completed_in_7_days': completed_in_7_days,
+            'completed_over_7_days': completed_over_7_days
+        }
 
