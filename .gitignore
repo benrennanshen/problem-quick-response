@@ -43,3 +43,6 @@ models/*/
 models.zip
 !models/.gitkeep
 !models/README.md
+
+# Python wheel 包文件（文件较大，不提交到git）
+*.whl
