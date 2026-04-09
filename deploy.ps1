@@ -7,7 +7,7 @@ param(
     [string]$ImageName = "problemquickresponse",        # 镜像名称（不含 tag）
     [string]$ImageTag = "latest",                       # 镜像 Tag
     [string]$Registry = "",                             # 可选：如果需要先 docker login 一个 registry，可以在这里指定（本地直连服务器时一般留空）
-    [string]$ProxyHost = "192.168.1.198:10811",         # HTTP/HTTPS 代理地址（与 agent 脚本保持一致）
+    [string]$ProxyHost = "127.0.0.1:10811",             # HTTP/HTTPS 代理地址（10 服务器本地 Nginx）
     [string]$DockerHost = "192.168.1.10:2375",          # Docker Host（与 agent 脚本保持一致）
     [string]$RemoteHost = "192.168.1.10",               # 远程服务器地址
     [string]$RemoteUser = "root",                       # 远程服务器用户
@@ -59,9 +59,15 @@ Step "设置代理和 Docker Host 环境变量"
 $env:HTTP_PROXY = "http://$ProxyHost"
 $env:HTTPS_PROXY = "http://$ProxyHost"
 $env:DOCKER_HOST = "tcp://$DockerHost"
+# Docker daemon 连接不走代理
+$env:NO_PROXY = "$DockerHost,$RemoteHost"
+# 启用 BuildKit 以利用缓存加速构建
+$env:DOCKER_BUILDKIT = "1"
 Write-Success "已设置 HTTP_PROXY=$($env:HTTP_PROXY)"
 Write-Success "已设置 HTTPS_PROXY=$($env:HTTPS_PROXY)"
 Write-Success "已设置 DOCKER_HOST=$($env:DOCKER_HOST)"
+Write-Success "已设置 NO_PROXY=$($env:NO_PROXY)"
+Write-Success "已设置 DOCKER_BUILDKIT=1"
 
 # 步骤1: 构建 Docker 镜像
 Step "构建 Docker 镜像 ($FullImageName)"
@@ -73,7 +79,8 @@ try {
     }
 
     Write-Host "执行命令: docker build -t $FullImageName ." -ForegroundColor Yellow
-    docker build -t $FullImageName .
+    # 使用 BuildKit 内联缓存，下次构建会复用之前的层
+    docker build --cache-from=type=registry,ref=$FullImageName --cache-to=type=inline -t $FullImageName .
 
     if ($LASTEXITCODE -ne 0) {
         throw "docker build 失败，退出码: $LASTEXITCODE"

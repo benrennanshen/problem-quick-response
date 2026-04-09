@@ -23,8 +23,8 @@ class StatisticsRequest(BaseModel):
     """
     统计请求模型
     """
-    start_time: str = Field(..., description="开始时间，格式：YYYY-MM-DD HH:MM:SS")
-    end_time: str = Field(..., description="结束时间，格式：YYYY-MM-DD HH:MM:SS")
+    start_time: str = Field(..., description="开始时间，支持 YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS")
+    end_time: str = Field(..., description="结束时间，支持 YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS")
 
 class DepartmentStatistics(BaseModel):
     """
@@ -116,13 +116,13 @@ class DetailRequest(BaseModel):
     """
     明细查询请求模型
     """
-    start_time: str = Field(..., description="开始时间，格式：YYYY-MM-DD HH:MM:SS")
-    end_time: str = Field(..., description="结束时间，格式：YYYY-MM-DD HH:MM:SS")
+    start_time: str = Field(..., description="开始时间，支持 YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS")
+    end_time: str = Field(..., description="结束时间，支持 YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS")
     handling_unit: Optional[str] = Field(None, description="受理单位筛选")
     category: Optional[str] = Field(None, description="诉求分类筛选")
     status: Optional[str] = Field(None, description="状态筛选")
-    finish_start_time: Optional[str] = Field(None, description="办结开始时间，格式：YYYY-MM-DD HH:MM:SS")
-    finish_end_time: Optional[str] = Field(None, description="办结结束时间，格式：YYYY-MM-DD HH:MM:SS")
+    finish_start_time: Optional[str] = Field(None, description="办结开始时间（可选）")
+    finish_end_time: Optional[str] = Field(None, description="办结结束时间（可选）")
     page: int = Field(1, ge=1, description="页码，从1开始")
     page_size: int = Field(20, ge=1, le=100, description="每页数量，最大100")
 
@@ -156,11 +156,11 @@ class ExportRequest(BaseModel):
     """
     导出请求模型
     """
-    start_time: str = Field(..., description="开始时间，格式：YYYY-MM-DD HH:MM:SS")
-    end_time: str = Field(..., description="结束时间，格式：YYYY-MM-DD HH:MM:SS")
+    start_time: str = Field(..., description="开始时间，支持 YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS")
+    end_time: str = Field(..., description="结束时间，支持 YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS")
     handling_unit: Optional[str] = Field(None, description="受理单位筛选")
     category: Optional[str] = Field(None, description="诉求分类筛选")
     status: Optional[str] = Field(None, description="状态筛选")
-    finish_start_time: Optional[str] = Field(None, description="办结开始时间，格式：YYYY-MM-DD HH:MM:SS")
-    finish_end_time: Optional[str] = Field(None, description="办结结束时间，格式：YYYY-MM-DD HH:MM:SS")
+    finish_start_time: Optional[str] = Field(None, description="办结开始时间（可选）")
+    finish_end_time: Optional[str] = Field(None, description="办结结束时间（可选）")
 

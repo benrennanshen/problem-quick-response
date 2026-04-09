@@ -2,6 +2,57 @@
 
 基于FastAPI的接诉即办数据统计分析系统，提供完整的数据统计和分析功能。
 
+## 部署说明（重要）
+
+### 一键部署
+
+```powershell
+# 在项目根目录执行
+.\deploy.ps1
+```
+
+**首次部署需要约 4 分钟**（下载依赖），后续代码变更只需 **5 秒**。
+
+### 部署架构
+
+- **本机（Windows）**: 执行 deploy.ps1，通过远程 Docker 构建
+- **远程服务器（192.168.1.10）**: Docker Host，运行容器
+- **Docker 镜像**: 分层缓存，PyTorch 和依赖包缓存在基础镜像中
+
+### 文件说明
+
+| 文件 | 说明 |
+|------|------|
+| `deploy.ps1` | 一键部署脚本，构建镜像并远程部署 |
+| `Dockerfile` | 应用镜像，基于基础镜像，只包含代码 |
+| `Dockerfile.base` | 基础镜像，包含 PyTorch 和所有依赖 |
+| `docker-compose.yml` | 远程服务器上的容器编排配置 |
+
+### 依赖变更时重建基础镜像
+
+如果修改了 `requirements.txt`，需要先重建基础镜像：
+
+```powershell
+# 重建基础镜像（耗时约 4 分钟）
+docker build -f Dockerfile.base -t problemquickresponse:base .
+
+# 然后正常部署
+.\deploy.ps1
+```
+
+### 部署参数配置
+
+在 `deploy.ps1` 中可配置：
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `ImageName` | problemquickresponse | 镜像名称 |
+| `ImageTag` | latest | 镜像标签 |
+| `DockerHost` | 192.168.1.10:2375 | 远程 Docker 地址 |
+| `RemoteHost` | 192.168.1.10 | 远程服务器地址 |
+| `RemoteUser` | root | SSH 用户 |
+| `RemoteProjectPath` | /fskj/workspace/problemquickresponse | 远程项目路径 |
+
 ## 功能特性
 
 - 📊 数据统计：支持按时间范围查询统计数据
@@ -12,11 +63,13 @@
 
 ## 技术栈
 
-- **Python**: 3.10.11
+- **Python**: 3.11
 - **Web框架**: FastAPI
 - **数据库**: MySQL (SQLAlchemy ORM)
 - **文本相似度**: sentence-transformers
 - **日期处理**: chinesecalendar
+- **AI 模型**: PyTorch 2.2.1 CPU
+- **容器**: Docker + Docker Compose
 
 ## 项目结构
 
@@ -42,14 +95,16 @@ problem-quick-response/
 
 ## 安装步骤
 
-### 1. 克隆项目
+### 本地开发
+
+#### 1. 克隆项目
 
 ```bash
 git clone <repository-url>
 cd problem-quick-response
 ```
 
-### 2. 创建虚拟环境
+#### 2. 创建虚拟环境
 
 ```bash
 python -m venv venv
@@ -61,15 +116,15 @@ venv\Scripts\activate
 source venv/bin/activate
 ```
 
-### 3. 安装依赖
+#### 3. 安装依赖
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. 配置环境变量
+#### 4. 配置环境变量
 
-创建 `.env` 文件（参考 `env.example`）：
+创建 `.env` 文件：
 
 ```env
 # MySQL数据库配置
@@ -91,7 +146,7 @@ MODEL_PATH=models/paraphrase-multilingual-MiniLM-L12-v2
 MODEL_NAME=paraphrase-multilingual-MiniLM-L12-v2
 ```
 
-### 5. 准备模型文件（可选，推荐）
+#### 5. 准备模型文件（可选，推荐）
 
 如果使用本地模型（离线使用），需要先下载模型：
 
@@ -103,13 +158,13 @@ model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
 model.save('./models/paraphrase-multilingual-MiniLM-L12-v2')
 ```
 
-然后在 `.env` 中配置 `MODEL_PATH` 指向模型目录。
+### 生产部署（Docker）
 
-如果不配置 `MODEL_PATH`，系统会使用 `MODEL_NAME` 在线下载模型（首次运行需要网络）。
+参见上方「部署说明」章节，使用 `.\deploy.ps1` 一键部署。
 
 ## 运行项目
 
-### 开发模式
+### 本地开发模式
 
 ```bash
 python -m app.main
@@ -121,10 +176,11 @@ python -m app.main
 uvicorn app.main:app --host 0.0.0.0 --port 8004 --reload
 ```
 
-### 生产模式
+### 生产部署模式
 
-```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8004 --workers 4
+```powershell
+# Windows 本机执行，自动部署到远程服务器
+.\deploy.ps1
 ```
 
 ## API文档

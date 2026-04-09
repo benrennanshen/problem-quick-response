@@ -6,6 +6,7 @@ from sqlalchemy import and_, func
 from app.models import StudentRequest
 from app.utils.date_utils import (
     parse_datetime,
+    normalize_time_range,
     is_workday,
     get_workdays_between,
     get_workday_hours_between,
@@ -85,18 +86,18 @@ class StatisticsService:
     def calculate_statistics(self, start_time: str, end_time: str) -> Dict:
         """
         计算统计数据
-        
+
         Args:
-            start_time: 开始时间
-            end_time: 结束时间
-        
+            start_time: 开始时间（支持 "2024-01-01" 或 "2024-01-01 00:00:00"）
+            end_time: 结束时间（支持 "2024-01-01" 或 "2024-01-01 23:59:59"）
+                       只传日期时会自动补全为 23:59:59
+
         Returns:
             统计结果字典
         """
         try:
-            # 解析时间
-            start_dt = parse_datetime(start_time)
-            end_dt = parse_datetime(end_time)
+            # 规范化时间（自动补全时分秒）
+            start_dt, end_dt = normalize_time_range(start_time, end_time)
         except Exception as e:
             logger.error(f"时间解析失败: {e}")
             raise ValueError(f"时间格式错误: {e}")
@@ -439,13 +440,13 @@ class StatisticsService:
         获取明细记录（支持分页和筛选）
 
         Args:
-            start_time: 开始时间
-            end_time: 结束时间
+            start_time: 开始时间（支持 "2024-01-01" 或 "2024-01-01 00:00:00"）
+            end_time: 结束时间（支持 "2024-01-01" 或 "2024-01-01 23:59:59"）
             handling_unit: 受理单位筛选
             category: 诉求分类筛选
             status: 状态筛选
-            finish_start_time: 办结开始时间
-            finish_end_time: 办结结束时间
+            finish_start_time: 办结开始时间（可选）
+            finish_end_time: 办结结束时间（可选）
             page: 页码
             page_size: 每页数量
 
@@ -453,9 +454,8 @@ class StatisticsService:
             包含明细记录和汇总统计的字典
         """
         try:
-            # 解析时间
-            start_dt = parse_datetime(start_time)
-            end_dt = parse_datetime(end_time)
+            # 规范化时间（自动补全时分秒）
+            start_dt, end_dt = normalize_time_range(start_time, end_time)
             finish_start_dt = parse_datetime(finish_start_time) if finish_start_time else None
             finish_end_dt = parse_datetime(finish_end_time) if finish_end_time else None
         except Exception as e:

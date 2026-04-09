@@ -9,6 +9,9 @@ from typing import List, Tuple
 def parse_datetime(date_str: str) -> datetime:
     """
     解析日期字符串，支持多种格式
+    如果只传日期（没有时分秒），会根据上下文自动补全：
+    - 作为开始时间：补全为 00:00:00
+    - 作为结束时间：补全为 23:59:59
     """
     formats = [
         "%Y-%m-%d %H:%M:%S",
@@ -18,14 +21,55 @@ def parse_datetime(date_str: str) -> datetime:
         "%Y/%m/%d %H:%M",
         "%Y/%m/%d"
     ]
-    
+
     for fmt in formats:
         try:
             return datetime.strptime(date_str.strip(), fmt)
         except ValueError:
             continue
-    
+
     raise ValueError(f"无法解析日期格式: {date_str}")
+
+
+def normalize_time_range(start_time: str, end_time: str) -> tuple:
+    """
+    规范化时间范围，自动补全时分秒
+
+    规则：
+    - 如果 start_time 只包含日期（没有时分秒），自动补全为 00:00:00
+    - 如果 end_time 只包含日期（没有时分秒），自动补全为 23:59:59
+    - 如果已包含时分秒，保持原值不变
+
+    Args:
+        start_time: 开始时间字符串
+        end_time: 结束时间字符串
+
+    Returns:
+        (start_datetime, end_datetime): 规范化后的 datetime 对象
+
+    Examples:
+        normalize_time_range("2024-01-01", "2024-01-01")
+        -> (2024-01-01 00:00:00, 2024-01-01 23:59:59)
+
+        normalize_time_range("2024-01-01 08:30:00", "2024-01-01 17:30:00")
+        -> (2024-01-01 08:30:00, 2024-01-01 17:30:00)  # 保持原值
+    """
+    start_dt = parse_datetime(start_time)
+    end_dt = parse_datetime(end_time)
+
+    # 检查原始字符串是否包含时分秒（通过冒号判断）
+    start_has_time = ":" in start_time
+    end_has_time = ":" in end_time
+
+    # 如果开始时间只传了日期，补全为 00:00:00
+    if not start_has_time:
+        start_dt = datetime.combine(start_dt.date(), datetime.min.time())
+
+    # 如果结束时间只传了日期，补全为 23:59:59
+    if not end_has_time:
+        end_dt = datetime.combine(end_dt.date(), datetime.max.time().replace(microsecond=0))
+
+    return start_dt, end_dt
 
 
 def is_workday(date: datetime) -> bool:
